@@ -6,7 +6,7 @@ CFLAGS = -Wall -std=c99 -Wno-missing-braces
 LIBS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 TARGET = battleship
-SRC = main.c widget.c animations.c
+SRC = main.c scripts/widget.c scripts/animations.c
 
 
 $(TARGET): $(SRC)
