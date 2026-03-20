@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "raylib.h"
-#include "widget.h"
+#include "scripts/widget.h"
 
 //10x10 grid, 4 1x1 3 1x2 2 1x3 1 1x4
 
