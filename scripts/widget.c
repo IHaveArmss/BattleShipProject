@@ -15,8 +15,17 @@
 #define POS_OFFSET_Y 50
 #define HEIGHT_PADDING 600
 #define CELLSIZE 55
-
+#define DARKRED CLITERAL(Color){ 220, 20, 60, 255 }
 #define CHECKERBOARD
+
+int topGridAttacks[10][10] = {0};
+typedef enum tools{
+    toolFire,
+
+    toolMarkMaybe,
+    toolMarkWater,
+    toolClearMark
+}Tools;
 
 bool drawButton(Rectangle bounds,Color baseColor,Color gridColor){
     Vector2 mousePoint = GetMousePosition();
@@ -34,6 +43,28 @@ bool drawButton(Rectangle bounds,Color baseColor,Color gridColor){
     DrawRectangleLinesEx(bounds, 2, gridColor);
 
     return clicked;
+}
+
+void drawX(int posx, int posy, int size) {
+    int padding = 2.5;
+    DrawLine(posx+padding, posy+padding, posx + size-padding, posy + size-padding, RED);
+    DrawLine(posx + size-padding, posy+padding, posx+padding, posy + size-padding, RED);
+}
+void drawTargetMark(int posx, int posy, int size) {
+    float thickness = 3.0f;
+    int centerX = posx+size/2;
+    int centerY = posy+size/2;
+    int radius = size/3; 
+    int padding = 6;       
+    //punct
+    DrawCircle(centerX, centerY, 2, DARKRED);
+    //outer big ring
+    DrawRing((Vector2){ centerX, centerY }, radius - thickness, radius, 0, 360, 36, DARKRED);
+    //alea 4 fancy le urasc
+    DrawLineEx((Vector2){ centerX, posy+ padding }, (Vector2){ centerX, centerY -radius }, thickness, DARKRED);
+    DrawLineEx((Vector2){ centerX,centerY +radius }, (Vector2){ centerX, posy + size -padding }, thickness, DARKRED);
+    DrawLineEx((Vector2){ posx +padding, centerY }, (Vector2){ centerX -radius, centerY }, thickness, DARKRED);
+    DrawLineEx((Vector2){ centerX + radius, centerY }, (Vector2){ posx+ size - padding, centerY }, thickness, DARKRED);
 }
 
 void drawGrid(){
@@ -54,17 +85,21 @@ void drawGrid(){
                 int posY = yOffset + i * CELLSIZE;
                 Rectangle bounds = {posX, posY+30, CELLSIZE, CELLSIZE};
                 
+                bool isHovered = CheckCollisionPointRec(mousePoint, bounds);
 
                 if (CheckCollisionPointRec(mousePoint, bounds)) {
                     fillCol = DARKGRAY; 
 
                     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                         printf("Grid %d-Atacat:[%d][%d]\n", k,i, j);
+                        if (k == 0) {
+                            topGridAttacks[i][j] = 1;
+                        }
                     }
                 } else {
                     fillCol = BLACK;
                 }
-
+                
                 if (CHECKER_BOARD) {
                     Color squareColor;
                     if((i+j)%2==0){
@@ -77,6 +112,13 @@ void drawGrid(){
                     
                     drawButton(bounds,fillCol,lineCol);
 
+                }
+                if (k == 0) {
+                    if (topGridAttacks[i][j] == 1) {
+                        drawX(bounds.x, bounds.y, CELLSIZE);
+                    } else if (isHovered) {
+                        drawTargetMark(bounds.x, bounds.y, CELLSIZE);
+                    }
                 }
             }
         }

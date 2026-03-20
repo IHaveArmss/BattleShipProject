@@ -19,7 +19,7 @@ int main(void) {
     
     SetTargetFPS(60);
 
-    GameState currentState = MENU;
+    GameState currentState = GAMEPLAY;
 
     while (!WindowShouldClose()) {
         BeginDrawing();
@@ -33,8 +33,8 @@ int main(void) {
                 ClearBackground(BACKGROUND_COLOR);
                 drawGrid();
             }
+                        
             
-            //drawMainMenu();
            
         EndDrawing();
     }
