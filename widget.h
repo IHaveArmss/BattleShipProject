@@ -9,5 +9,7 @@
 #define THREE_SHIP 2
 #define FOUR_SHIP 1
 //
+#define BACKGROUND_COLOR CLITERAL(Color){ 15, 25, 45, 255 }
+void drawGrid(int);
 
 #endif

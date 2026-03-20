@@ -13,10 +13,10 @@ int main(void) {
 
     while (!WindowShouldClose()) {
         BeginDrawing();
-            ClearBackground(RAYWHITE);
-            for(int i=1;i<=10;i)
-            DrawRectangle(1,1,50,50,RED);
-            DrawText("CONGRATS",190,200,20,LIGHTGRAY);
+
+            ClearBackground(BACKGROUND_COLOR);
+            drawGrid(0);
+            drawGrid(1);
         EndDrawing();
     }
     CloseWindow();
