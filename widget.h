@@ -13,8 +13,9 @@
 #define FOUR_SHIP 1
 //
 #define BACKGROUND_COLOR CLITERAL(Color){ 15, 25, 45, 255 }
+#define BACKGROUND_COLOR_MENU BLACK
 void drawGrid();
 bool drawButton(Rectangle,Color,Color);
-void drawRadar(int , int , float );
+bool drawMainMenu();
 
 #endif

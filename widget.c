@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
+#include <time.h>
+
 
 #include "widget.h"
 #include "raylib.h"
 #include "stdbool.h"
-
+#include "animations.h"
 
 
 #define CHECKER_BOARD 0
@@ -81,77 +84,23 @@ void drawGrid(){
 }
 
 
+bool drawMainMenu(void){
+    ClearBackground(BACKGROUND_COLOR_MENU);
 
-
-typedef enum { RADAR_ROTATING, RADAR_PAUSED } RadarState;
-
-void drawRadar(int centerX, int centerY, float maxRadius) {
-    static float angle = -PI/2.0f; 
-    static RadarState state = RADAR_ROTATING;
-    static float pauseTimer = 0.0f;
+    DrawText("BATTLESHIP", 150, 150, 100, WHITE);
     
-    // --- setari de viteza
-    float f = 1.0f; // frecventa rotati pe secunda
-    float rotationSpeed = 2.0f * PI * f; 
-    // ---------------------
+    drawRadar(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 200.0f);
 
-    float pauseDuration = 1.0f; 
-    float pulsationAmount = 0.10f; 
-    float dt = GetFrameTime(); 
+    Rectangle btnRect = {350, 900, 300, 100};
+    bool isStartClicked = drawButton(btnRect, BLACK, GREEN);
 
-    // 1. Masina de stari (e automat iapa style))
-    switch (state) {
-        case RADAR_ROTATING:
-            angle += rotationSpeed * dt;
-            if (angle >= (3.0f * PI / 2.0f)) { 
-                angle = -PI/2.0f; 
-                state = RADAR_PAUSED;
-                pauseTimer = 0.0f;
-            }
-            break;
+    const char* text = "START";
+    int fontSize = 50;
+    int textWidth = MeasureText(text, fontSize);
+    int textX = btnRect.x + (btnRect.width - textWidth) / 2;
+    int textY = btnRect.y + (btnRect.height - fontSize) / 2;
+    DrawText(text, textX, textY, fontSize, WHITE);
 
-        case RADAR_PAUSED:
-            pauseTimer += dt;
-            if (pauseTimer >= pauseDuration) {
-                state = RADAR_ROTATING;
-            }
-            break;
-    }
-
-    // 2. Logica de pulsatie thank you random website :pray:
-    float pulseFactor = 1.0f; 
-    
-    if (state == RADAR_ROTATING) {
-        float rotationTraveled = angle - (-PI/2.0f);
-        
-        if (rotationTraveled < PI) {
-            pulseFactor += pulsationAmount * sinf(rotationTraveled);
-        }
-    }
-    //-----
-    float currentRadius = maxRadius * pulseFactor;
-
-    Color sonarGreen = Fade(GREEN, 0.8f);
-    Color sonarDarkGreen = Fade(DARKGREEN, 0.5f);
-
-    //3. Desenarea
-    float circleThickness = 4.0f; // grosime inele
-    float lineThickness = 6.0f;   // grosimea liniei
-    // -----------------------------------
-
-    int numCircles = 5;
-    for (int i = 1; i <= numCircles; i++) {
-        float ringRadius = (currentRadius / numCircles) * i;
-        
-        DrawRing((Vector2){(float)centerX, (float)centerY}, 
-                 ringRadius - circleThickness, ringRadius, 
-                 0.0f, 360.0f, 64, sonarDarkGreen);
-    }
-
-    int endX = centerX + cosf(angle) * currentRadius;
-    int endY = centerY + sinf(angle) * currentRadius;
-    
-    // FOLOSIM lineThickness în loc de 3.0f
-    DrawLineEx((Vector2){(float)centerX, (float)centerY}, (Vector2){(float)endX, (float)endY}, lineThickness, sonarGreen);
-    DrawCircle(centerX, centerY, 6.0f, sonarGreen);
+    return isStartClicked;
 }
+
