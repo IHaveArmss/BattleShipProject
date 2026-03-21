@@ -122,7 +122,7 @@ void drawRadar(int centerX, int centerY, float maxRadius) {
             int blipX = centerX + cosf(randomBlips[i].angle) * randomBlips[i].distance;
             int blipY = centerY + sinf(randomBlips[i].angle) * randomBlips[i].distance;
             
-            Color currentBlipColor = Fade(GREEN, randomBlips[i].alpha);
+            Color currentBlipColor = Fade(RED, randomBlips[i].alpha);
             DrawCircle(blipX, blipY, randomBlips[i].radius, currentBlipColor);
         }
     }
