@@ -5,10 +5,7 @@
 
 //10x10 grid, 4 1x1 3 1x2 2 1x3 1 1x4
 
-typedef enum GameState {
-    MENU,
-    GAMEPLAY
-} GameState;
+
 
 int main(void) {
 
@@ -19,8 +16,8 @@ int main(void) {
     
     SetTargetFPS(60);
 
-    GameState currentState = MENU;
-
+    GameState currentState = SETUP;
+    
     while (!WindowShouldClose()) {
         BeginDrawing();
 
@@ -29,12 +26,13 @@ int main(void) {
                     currentState = GAMEPLAY;
                 }
             }
-            else if(currentState == GAMEPLAY){
+            else {
                 ClearBackground(BACKGROUND_COLOR);
-                drawGrid();
+                drawGrid(currentState);
+
+                if(currentState!=ENEMY_TURN && currentState !=PLAYER_TURN)
+                    drawSideMenu();
             }
-                        
-            
            
         EndDrawing();
     }
