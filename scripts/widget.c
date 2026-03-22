@@ -128,10 +128,18 @@ void drawRectWBorder(Rectangle bounds,Color baseColor,Color gridColor){
 }
 
 void drawX(int posx, int posy, int size) {
-    int padding = 2.5;
-    DrawLine(posx+padding, posy+padding, posx + size-padding, posy + size-padding, RED);
-    DrawLine(posx + size-padding, posy+padding, posx+padding, posy + size-padding, RED);
+    float padding = 5.0f; 
+    float thick = 4.0f; //grosime
+
+    Vector2 start1 = { posx + padding, posy +padding };
+    Vector2 end1   = { posx+size-padding,posy + size-padding };
+    DrawLineEx(start1, end1, thick, RED);
+
+    Vector2 start2 = { posx+size- padding, posy+ padding };
+    Vector2 end2   = { posx+padding, posy +size- padding };
+    DrawLineEx(start2, end2, thick, RED);
 }
+
 void drawTargetMark(int posx, int posy, int size) {
     float thickness = 3.0f;
     int centerX = posx+size/2;

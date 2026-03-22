@@ -16,14 +16,14 @@ int main(void) {
     
     SetTargetFPS(60);
 
-    GameState currentState = SETUP;
+    GameState currentState = MENU;
     
     while (!WindowShouldClose()) {
         BeginDrawing();
 
             if(currentState == MENU){
                 if(drawMainMenu()){
-                    currentState = GAMEPLAY;
+                    currentState = SETUP;
                 }
             }
             else {
