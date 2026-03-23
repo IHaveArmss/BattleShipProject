@@ -5,7 +5,7 @@
 #include "raylib.h"
 
 #define SCREEN_WIDTH 1000
-#define SCREEN_HEIGHT 1200
+#define SCREEN_HEIGHT 1080
 //the 1x1 1x2 1x3 1x4 ships 
 
 typedef enum GameState {

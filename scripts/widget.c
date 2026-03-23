@@ -12,10 +12,11 @@
 
 
 #define CHECKER_BOARD 0
-#define POS_OFFSET_X 225
-#define POS_OFFSET_Y 50
-#define HEIGHT_PADDING 600
-#define CELLSIZE 55
+#define BASE_SCREEN_HEIGHT 1200.0f
+#define BASE_POS_OFFSET_X 225.0f
+#define BASE_TOP_MARGIN 30.0f
+#define BASE_HEIGHT_PADDING 600.0f
+#define BASE_CELLSIZE 55.0f
 #define DARKRED CLITERAL(Color){ 220, 20, 60, 255 }
 #define CHECKERBOARD
 
@@ -49,6 +50,12 @@ int shipsNeeded[5] = {0, 4, 3, 2, 1};
 int shipsFound[5]  = {0, 0, 0, 0, 0};
 bool boardHasErrors = false;
 int tempR[100], tempC[100];
+
+static int ScaleUi(float value) {
+    float scale = (float)GetScreenHeight()/BASE_SCREEN_HEIGHT;
+    if (scale < 0.75f) scale = 0.75f;
+    return (int)roundf(value*scale);
+}
 
 void FloodFillShip(int i, int j, int* minI, int* maxI, int* minJ, int* maxJ, int* count, bool visited[10][10]) {
     if (i < 0 || i >= 10 || j < 0 || j >= 10) return;
@@ -157,11 +164,11 @@ void drawTargetMark(int posx, int posy, int size) {
     DrawLineEx((Vector2){ centerX + radius, centerY }, (Vector2){ posx+ size - padding, centerY }, thickness, DARKRED);
 }
 
-void drawShipPart(int i, int j, Rectangle bounds, Color shipCol) {
+void drawShipPart(int i, int j, Rectangle bounds, Color shipCol, int cellSize) {
     float padding = 8.0f;
     float coreX = bounds.x + padding;
     float coreY = bounds.y + padding;
-    float coreSize = CELLSIZE - (padding * 2);
+    float coreSize = cellSize - (padding * 2);
 
     DrawRectangleRounded((Rectangle){coreX, coreY, coreSize, coreSize}, 0.5f, 4, shipCol);
 
@@ -182,6 +189,29 @@ void drawShipPart(int i, int j, Rectangle bounds, Color shipCol) {
 
 void drawGrid(GameState gameState){
     Vector2 mousePoint = GetMousePosition();
+    int screenW = GetScreenWidth();
+    int screenH = GetScreenHeight();
+    int topMargin = ScaleUi(BASE_TOP_MARGIN);
+    int interGridGap = ScaleUi(40.0f);
+
+    int maxCellByScale = ScaleUi(BASE_CELLSIZE);
+    int maxCellByHeight = (screenH - (2*topMargin) - interGridGap)/20;
+    int cellSize = maxCellByScale;
+    if (maxCellByHeight < cellSize) 
+        cellSize = maxCellByHeight;
+    if (cellSize < 30) 
+        cellSize = 30;
+
+    int gridWidth = 10*cellSize;
+    int gridHeight = 10*cellSize;
+    int fullHeight = (2*gridHeight) + interGridGap;
+    int baseY = (screenH - fullHeight)/2;
+    if (baseY < 0) 
+        baseY = 0;
+
+    int posOffsetX = (screenW - gridWidth)/2;
+    if (posOffsetX < 0) 
+        posOffsetX = 0;
 
     Color lineCol = GREEN;
     Color fillCol = BLACK;
@@ -189,14 +219,14 @@ void drawGrid(GameState gameState){
     for(int k=0;k<=1;k++){
         int yOffset =0;
         if( k ==1){
-            yOffset = HEIGHT_PADDING;
+            yOffset = gridHeight + interGridGap;
         }
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
 
-                int posX = POS_OFFSET_X + j * CELLSIZE;
-                int posY = yOffset + i * CELLSIZE;
-                Rectangle bounds = {posX, posY+30, CELLSIZE, CELLSIZE};
+                int posX = posOffsetX + j * cellSize;
+                int posY = baseY + yOffset + i * cellSize;
+                Rectangle bounds = {posX, posY + topMargin, cellSize, cellSize};
                 
                 bool isHovered = CheckCollisionPointRec(mousePoint, bounds);
 
@@ -233,14 +263,14 @@ void drawGrid(GameState gameState){
                     Color shipColor = GRAY;
                     if (gameState == SETUP && PlayerShipMatrix[i][j].status ==false) 
                         shipColor = RED;
-                    drawShipPart(i,j,bounds,shipColor);
+                    drawShipPart(i,j,bounds,shipColor,cellSize);
                 }
                 //deseneaza X pe harta inamicului
                 if (k == 0) {
                     if (topGridAttacks[i][j] == 1) {
-                        drawX(bounds.x, bounds.y, CELLSIZE);
+                        drawX(bounds.x, bounds.y, cellSize);
                     } else if (isHovered) {
-                        drawTargetMark(bounds.x, bounds.y, CELLSIZE);
+                        drawTargetMark(bounds.x, bounds.y, cellSize);
                     }
                 }
             }
@@ -250,15 +280,30 @@ void drawGrid(GameState gameState){
 
 void drawSideMenu(void) {
 
-    int baseX = 12;  
-    int baseY = 650; 
+    int screenW = GetScreenWidth();
+    int screenH = GetScreenHeight();
 
-    DrawRectangle(baseX, baseY, 200, 400, LIGHTGRAY);
-    DrawText("FLEET SETUP", baseX + 10, baseY + 10, 20, BLACK);
+    int menuWidth = ScaleUi(200.0f);
+    int menuHeight = ScaleUi(400.0f);
+    int titleSize = ScaleUi(20.0f);
+    int bodySize = ScaleUi(20.0f);
+    int bodyStep = ScaleUi(40.0f);
+    int errorSize = ScaleUi(15.0f);
+    int baseX = ScaleUi(12.0f);
+    int baseY = screenH - menuHeight - ScaleUi(20.0f);
+
+    if (baseY < ScaleUi(12.0f)) baseY = ScaleUi(12.0f);
+    if (baseX + menuWidth > screenW) {
+        baseX = screenW - menuWidth - ScaleUi(12.0f);
+        if (baseX < 0) baseX = 0;
+    }
+
+    DrawRectangle(baseX, baseY, menuWidth, menuHeight, LIGHTGRAY);
+    DrawText("FLEET SETUP", baseX + ScaleUi(10.0f), baseY + ScaleUi(10.0f), titleSize, BLACK);
 
     
 
-    int currentY = baseY + 50; 
+    int currentY = baseY + ScaleUi(50.0f);
 
     for (int size = 4; size >= 1; size--) {
         int leftToPlace = shipsNeeded[size] - shipsFound[size];
@@ -269,29 +314,44 @@ void drawSideMenu(void) {
         if (leftToPlace < 0) textColor = RED;   
         if (leftToPlace == 0) textColor = GREEN; 
         
-        DrawText(text, baseX + 10, currentY, 20, textColor);
-        currentY += 40; 
+        DrawText(text, baseX + ScaleUi(10.0f), currentY, bodySize, textColor);
+        currentY += bodyStep;
     }
 
     if (boardHasErrors) {
-        DrawText("ERROR: Ships touching", baseX + 5, currentY + 20, 15, RED);
-        DrawText("or invalid shapes!", baseX + 5, currentY + 40, 15, RED);
+        DrawText("ERROR: Ships touching", baseX + ScaleUi(5.0f), currentY + ScaleUi(20.0f), errorSize, RED);
+        DrawText("or invalid shapes!", baseX + ScaleUi(5.0f), currentY + ScaleUi(40.0f), errorSize, RED);
     }
 }
 
 
 bool drawMainMenu(void){
+    int screenW = GetScreenWidth();
+    int screenH = GetScreenHeight();
+    int titleFontSize = ScaleUi(100.0f);
+    int titleY = ScaleUi(150.0f);
+
     ClearBackground(BACKGROUND_COLOR_MENU);
 
-    DrawText("BATTLESHIP", 150, 150, 100, WHITE);
+    int titleX = (screenW - MeasureText("BATTLESHIP", titleFontSize))/2;
+    DrawText("BATTLESHIP", titleX, titleY, titleFontSize, WHITE);
     
-    drawRadar(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 200.0f);
+    drawRadar(screenW / 2, screenH / 2, (float)ScaleUi(200.0f));
 
-    Rectangle btnRect = {350, 900, 300, 100};
+    Rectangle btnRect = {
+        (float)(screenW/2 - ScaleUi(150.0f)),
+        (float)(screenH - ScaleUi(180.0f)),
+        (float)ScaleUi(300.0f),
+        (float)ScaleUi(100.0f)
+    };
+
+    if (btnRect.y + btnRect.height > screenH - ScaleUi(20.0f)) {
+        btnRect.y = (float)(screenH - ScaleUi(20.0f) - btnRect.height);
+    }
     bool isStartClicked = drawButton(btnRect, BLACK, GREEN);
 
     const char* text = "START";
-    int fontSize = 50;
+    int fontSize = ScaleUi(50.0f);
     int textWidth = MeasureText(text, fontSize);
     int textX = btnRect.x + (btnRect.width - textWidth) / 2;
     int textY = btnRect.y + (btnRect.height - fontSize) / 2;
