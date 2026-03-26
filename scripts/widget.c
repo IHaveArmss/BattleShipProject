@@ -23,9 +23,7 @@
 
 typedef enum tools{
     toolFire,
-
     toolMarkMaybe,
-    toolMarkWater,
     toolClearMark
 }Tools;
 
@@ -43,9 +41,9 @@ typedef struct Ship{
 }ShipBuild;
 
 
-int topGridAttacks[10][10] = {0};
+int topGridAttacks[10][10] = {0};// 1 pentru toolfire 2 pt toolmark maybe 3 pt tool clearMark
 ShipBuild PlayerShipMatrix[10][10] ;
-
+Tools toolsState = 0;
 int shipsNeeded[5] = {0, 4, 3, 2, 1};
 int shipsFound[5]  = {0, 0, 0, 0, 0};
 bool boardHasErrors = false;
@@ -124,11 +122,13 @@ bool drawButton(Rectangle bounds,Color baseColor,Color gridColor){
         }
     }
 
+    
     DrawRectangleRec(bounds, drawColor);
     DrawRectangleLinesEx(bounds, 2, gridColor);
 
     return clicked;
 }
+
 void drawRectWBorder(Rectangle bounds,Color baseColor,Color gridColor){
     DrawRectangleRec(bounds, baseColor);
     DrawRectangleLinesEx(bounds, 2, gridColor);
@@ -234,12 +234,21 @@ void drawGrid(GameState gameState){
                     fillCol = DARKGRAY; 
 
                     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                        printf("Grid %d-Atacat:[%d][%d]\n", k,i, j);
-                        if (k == 0) {
+                        if (k == 0 && toolsState == toolFire) {
                             topGridAttacks[i][j] = 1;
+                            printf("Grid %d-Atacat:[%d][%d]\n", k,i, j);
+                        }
+                        else if(k == 0 && toolsState == toolMarkMaybe){
+                            topGridAttacks[i][j] = 2;
+                            printf("Grid %d-Marcat:[%d][%d]\n", k,i, j);
+                        }
+                        else if(k == 0 && toolsState == toolClearMark &&topGridAttacks[i][j] == 2){
+                            printf("Grid %d-Cleared:[%d][%d]\n", k,i, j);
+                            topGridAttacks[i][j] = 0;
                         }
                     }
-                } else {
+                }
+                 else {
                     fillCol = BLACK;
                 }
     
@@ -269,7 +278,7 @@ void drawGrid(GameState gameState){
                 if (k == 0) {
                     if (topGridAttacks[i][j] == 1) {
                         drawX(bounds.x, bounds.y, cellSize);
-                    } else if (isHovered) {
+                    } else if (isHovered&& toolsState == toolFire) {
                         drawTargetMark(bounds.x, bounds.y, cellSize);
                     }
                 }
@@ -321,6 +330,44 @@ void drawSideMenu(void) {
     if (boardHasErrors) {
         DrawText("ERROR: Ships touching", baseX + ScaleUi(5.0f), currentY + ScaleUi(20.0f), errorSize, RED);
         DrawText("or invalid shapes!", baseX + ScaleUi(5.0f), currentY + ScaleUi(40.0f), errorSize, RED);
+    }
+}
+void drawSideTools(void) {
+    Rectangle bounds = {50, 100, 100, 150};
+    DrawRectangleRec(bounds, LIGHTGRAY);
+
+    float segmentHeight = bounds.height / 3.0f;
+    float fontSize = ScaleUi(15.0f);
+    Font font = GetFontDefault();
+    int clicked;
+
+    // FIRE
+    Rectangle bounds1 = { bounds.x, bounds.y, bounds.width, segmentHeight };
+    clicked = drawButton(bounds1, BLACK, LIGHTGRAY);
+    Vector2 size1 = MeasureTextEx(font, "FIRE", fontSize, 1);
+    DrawTextEx(font, "FIRE", (Vector2){ bounds1.x + (bounds1.width - size1.x) / 2, bounds1.y + (bounds1.height - size1.y) / 2 }, fontSize, 1, WHITE);
+    if(clicked){
+        toolsState = toolFire;
+        printf("Tool selected: FIRE\n");
+    }
+    // UNKNOWN
+    Rectangle bounds2 = { bounds.x, bounds.y + segmentHeight, bounds.width, segmentHeight };
+    clicked = drawButton(bounds2, BLACK, LIGHTGRAY);
+    Vector2 size2 = MeasureTextEx(font, "UNKNOWN", fontSize, 1);
+    DrawTextEx(font, "UNKNOWN", (Vector2){ bounds2.x + (bounds2.width - size2.x) / 2, bounds2.y + (bounds2.height - size2.y) / 2 }, fontSize, 1, WHITE);
+    if(clicked){
+        toolsState = toolMarkMaybe;
+        printf("Tool selected: UNKNOWN\n");
+    }
+
+    // CLEAR
+    Rectangle bounds3 = { bounds.x, bounds.y + 2 * segmentHeight, bounds.width, segmentHeight };
+    clicked = drawButton(bounds3, BLACK, LIGHTGRAY);
+    Vector2 size3 = MeasureTextEx(font, "CLEAR", fontSize, 1);
+    DrawTextEx(font, "CLEAR", (Vector2){ bounds3.x + (bounds3.width - size3.x) / 2, bounds3.y + (bounds3.height - size3.y) / 2 }, fontSize, 1, WHITE);
+    if(clicked){
+        toolsState = toolClearMark;
+        printf("Tool selected: CLEAR\n");
     }
 }
 

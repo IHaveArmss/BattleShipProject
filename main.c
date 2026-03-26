@@ -38,7 +38,7 @@ int main(void) {
     
     SetTargetFPS(60);
 
-    GameState currentState = MENU;
+    GameState currentState = GAMEPLAY;
     
     while (!WindowShouldClose()) {
         BeginDrawing();
@@ -54,8 +54,10 @@ int main(void) {
 
                 if(currentState!=ENEMY_TURN && currentState !=PLAYER_TURN)
                     drawSideMenu();
+                drawSideTools();
             }
-           
+        
+
         EndDrawing();
     }
     CloseWindow();
