@@ -38,7 +38,7 @@ int main(void) {
     
     SetTargetFPS(60);
 
-    GameState currentState = GAMEPLAY;
+    GameState currentState = MENU;
     
     while (!WindowShouldClose()) {
         BeginDrawing();
