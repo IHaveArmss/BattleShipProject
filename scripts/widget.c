@@ -21,94 +21,14 @@
 #define CHECKERBOARD
 
 
-typedef enum tools{
-    toolFire,
-    toolMarkMaybe,
-    toolClearMark
-}Tools;
-
-typedef enum ShipType {
-    NULL_SHIP,
-    SHIP_1,
-    SHIP_2,
-    SHIP_3,
-    SHIP_4
-} ShipType;
-
-typedef struct Ship{
-    ShipType type;
-    bool status;
-}ShipBuild;
 
 
-int topGridAttacks[10][10] = {0};// 1 pentru toolfire 2 pt toolmark maybe 3 pt tool clearMark
-ShipBuild PlayerShipMatrix[10][10] ;
-Tools toolsState = 0;
-int shipsNeeded[5] = {0, 4, 3, 2, 1};
-int shipsFound[5]  = {0, 0, 0, 0, 0};
-bool boardHasErrors = false;
-int tempR[100], tempC[100];
 
 static int ScaleUi(float value) {
     float scale = (float)GetScreenHeight()/BASE_SCREEN_HEIGHT;
     if (scale < 0.75f) scale = 0.75f;
     return (int)roundf(value*scale);
 }
-
-void FloodFillShip(int i, int j, int* minI, int* maxI, int* minJ, int* maxJ, int* count, bool visited[10][10]) {
-    if (i < 0 || i >= 10 || j < 0 || j >= 10) return;
-    if (PlayerShipMatrix[i][j].type == NULL_SHIP || visited[i][j]) return;
-
-    visited[i][j] = true;
-    
-    tempR[*count] = i;
-    tempC[*count] = j;
-    (*count)++;
-    if (i < *minI) *minI = i;
-    if (i > *maxI) *maxI = i;
-    if (j < *minJ) *minJ = j;
-    if (j > *maxJ) *maxJ = j;
-
-    for (int di = -1; di <= 1; di++) {
-        for (int dj = -1; dj <= 1; dj++) {
-            if (di != 0 || dj != 0) {
-                FloodFillShip(i + di, j + dj, minI, maxI, minJ, maxJ, count, visited);
-            }
-        }
-    }
-}
-
-void CalculateFleet() {
-    bool visited[10][10] = {false};
-    boardHasErrors = false; 
-    for(int i=0; i<5; i++) shipsFound[i] = 0;
-
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
-            if (PlayerShipMatrix[i][j].type != NULL_SHIP && !visited[i][j]) {
-                int minI = i, maxI = i, minJ = j, maxJ = j, count = 0;
-                
-                FloodFillShip(i,j,&minI,&maxI,&minJ,&maxJ,&count,visited);
-
-                int width = maxJ - minJ + 1;
-                int height = maxI - minI + 1;
-
-                bool isShipValid = ((width==1||height==1)&&(width*height==count)&&(count <= 4));
-                
-                if (isShipValid) {
-                    shipsFound[count]++;
-                } else {
-                    boardHasErrors = true;
-                }
-                for(int k = 0; k < count; k++) {
-                    PlayerShipMatrix[tempR[k]][tempC[k]].status = isShipValid;
-                }
-            }
-        }
-    }
-}
-
-
 
 bool drawButton(Rectangle bounds,Color baseColor,Color gridColor){
     Vector2 mousePoint = GetMousePosition();
@@ -162,6 +82,12 @@ void drawTargetMark(int posx, int posy, int size) {
     DrawLineEx((Vector2){ centerX,centerY +radius }, (Vector2){ centerX, posy + size -padding }, thickness, DARKRED);
     DrawLineEx((Vector2){ posx +padding, centerY }, (Vector2){ centerX -radius, centerY }, thickness, DARKRED);
     DrawLineEx((Vector2){ centerX + radius, centerY }, (Vector2){ posx+ size - padding, centerY }, thickness, DARKRED);
+}
+
+void drawGrayDot(int posx, int posy, int size) {
+    int centerX = posx + size / 2;
+    int centerY = posy + size / 2;
+    DrawCircle(centerX, centerY, 4, GRAY);
 }
 
 void drawShipPart(int i, int j, Rectangle bounds, Color shipCol, int cellSize) {
@@ -235,14 +161,30 @@ void drawGrid(GameState gameState){
 
                     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
                         if (k == 0 && toolsState == toolFire) {
-                            topGridAttacks[i][j] = 1;
+                            if (EnemyShipMatrix[i][j].type != NULL_SHIP) {
+                                topGridAttacks[i][j] = 1; // Hit
+                                // Marcam diagonalele cu dot
+                                for (int di = -1; di <= 1; di += 2) {
+                                    for (int dj = -1; dj <= 1; dj += 2) {
+                                        int ni = i + di;
+                                        int nj = j + dj;
+                                        if (ni >= 0 && ni < 10 && nj >= 0 && nj < 10) {
+                                            if (topGridAttacks[ni][nj] == 0 || topGridAttacks[ni][nj] == 3) {
+                                                topGridAttacks[ni][nj] = 2; // Gray dot 
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                topGridAttacks[i][j] = 2; // Miss
+                            }
                             printf("Grid %d-Atacat:[%d][%d]\n", k,i, j);
                         }
                         else if(k == 0 && toolsState == toolMarkMaybe){
-                            topGridAttacks[i][j] = 2;
+                            topGridAttacks[i][j] = 3; // Mark
                             printf("Grid %d-Marcat:[%d][%d]\n", k,i, j);
                         }
-                        else if(k == 0 && toolsState == toolClearMark &&topGridAttacks[i][j] == 2){
+                        else if(k == 0 && toolsState == toolClearMark && (topGridAttacks[i][j] == 3 || topGridAttacks[i][j] == 2)){
                             printf("Grid %d-Cleared:[%d][%d]\n", k,i, j);
                             topGridAttacks[i][j] = 0;
                         }
@@ -274,11 +216,13 @@ void drawGrid(GameState gameState){
                         shipColor = RED;
                     drawShipPart(i,j,bounds,shipColor,cellSize);
                 }
-                //deseneaza X pe harta inamicului
+                //deseneaza semnele pe harta inamicului
                 if (k == 0) {
                     if (topGridAttacks[i][j] == 1) {
                         drawX(bounds.x, bounds.y, cellSize);
-                    } else if (isHovered&& toolsState == toolFire) {
+                    } else if (topGridAttacks[i][j] == 2) {
+                        drawGrayDot(bounds.x, bounds.y, cellSize);
+                    } else if (isHovered && toolsState == toolFire) {
                         drawTargetMark(bounds.x, bounds.y, cellSize);
                     }
                 }
