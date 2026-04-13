@@ -27,16 +27,29 @@ how to run :
   
 info pt coduri de la socketuri
 HELLO <1 sau 2> -> Client catre Server: Vreau sa fiu Player 1 sau 2. 
+
 OK <1 sau 2> -> Server catre Client: Esti Player 1 sau 2.
+
 REJECT -> Server catre Client: Jocul e plin, te resping. 
+
 BOARD <100_caractere_0_si_1> -> Client catre Server: Asta e harta mea (0 apa, 1 barca). 
+
 READY -> Server catre Clienti: Ambele harti primite, incepe meciul! 
+
 TURN -> Server catre Client: E randul tau, alege unde ataci. 
+
 WAIT -> Server catre Client: Asteapta confirmarea adversarului. 
+
 ATTACK -> Client catre Server: Atac la coordonatele astea. 
+
 HIT -> Server catre Atacator: Ai lovit o barca. Ai rand din nou. 
+
 YOUHIT -> Server catre Atacat: Ai pierdut o bucata de barca. 
+
 MISS -> Server catre Atacator: Ai tras in apa. Schimbam randul. 
+
 YOUMISS -> Server catre Atacat: Adversarul a tras in apa. 
+
 WIN -> Server catre Client: Ai scufundat tot, ai castigat! 
+
 LOSE -> Server catre Client: Ai ramas fara barci, ai pierdut!
