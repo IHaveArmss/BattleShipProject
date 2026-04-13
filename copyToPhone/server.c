@@ -50,13 +50,9 @@ int waitForMsg(int playerIdx, char* buf, int bufSize) {
 int parseBoard(int playerIdx, const char* boardStr) {
     int cells = 0;
     for (int i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-
         int val = boardStr[i]-'0';
         boards[playerIdx][i/GRID_SIZE][i%GRID_SIZE] = val;
-
-        if (val == 1) {
-        cells++;
-        }
+        if (val == 1) cells++;
     }
     shipCellsLeft[playerIdx] = cells;
     printf("SERVER: P%d board primit, %d celule cu ship\n", playerIdx + 1, cells);
@@ -97,14 +93,12 @@ int main(void) {
     printf("SERVER: Astept playeri...\n");
 
     //acceptam 2 playeri
-
     int playersConnected[2] = {0, 0};
     char buf[512];
 
     for (int i = 0; i < 2; i++) {
         struct sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
-        //blocheaza aici pana vine primul client
         int sock = accept(serverSock, (struct sockaddr*)&clientAddr, &clientLen);
         if (sock < 0) {
             printf("SERVER: Eroare accept: %s\n", strerror(errno));
@@ -113,8 +107,7 @@ int main(void) {
         }
 
         //citim HELLO mesajul
-        int n = recv(sock, buf, sizeof(buf)-1, 0);
-
+        int n = recv(sock, buf, sizeof(buf) - 1, 0);
         if (n <= 0) {
             printf("SERVER: Client deconectat inainte de HELLO\n");
             close(sock);
@@ -126,7 +119,6 @@ int main(void) {
 
         int playerNum = 0;
         if (sscanf(buf, "HELLO %d", &playerNum) != 1 || (playerNum != 1 && playerNum != 2)) {
-            //partea asta e pusa de ai btw iti dai seama ca eu nu verificam daca e 1 sau 2
             printf("SERVER: HELLO invalid, ignoram\n");
             close(sock);
             i--;
@@ -164,16 +156,15 @@ int main(void) {
     int boardsReceived[2] = {0, 0};
     while (!boardsReceived[0] || !boardsReceived[1]) {
         for (int i = 0; i < 2; i++) {
-            if (boardsReceived[i]) 
-                continue;
-            int n = recv(clientSock[i], buf, sizeof(buf) - 1, MSG_DONTWAIT);
+            if (boardsReceived[i]) continue;
             
+            int n = recv(clientSock[i], buf, sizeof(buf) - 1, MSG_DONTWAIT);
             if (n <= 0) {
                 if (n == 0) {
                     printf("SERVER: Player %d deconectat\n", i + 1);
                     goto cleanup;
                 }
-                continue; //AGAIN, nu e nimic inca
+                continue; //EAGAIN, nu e nimic inca
             }
             buf[n] = '\0';
             printf("SERVER: <- P%d: %s", i + 1, buf);

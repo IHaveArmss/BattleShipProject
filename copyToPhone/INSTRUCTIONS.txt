@@ -1,0 +1,29 @@
+=== BATTLESHIP SERVER - TERMUX SETUP ===
+
+URMARESTE ACESTI PASI PE TELEFON:
+
+1. DESCHIDE TERMUX
+2. INSTALEAZA CLANG (daca nu il ai):
+   pkg install clang make
+
+3. COPIAZA ACESTE FISIERE PE TELEFON
+   (server.c si Makefile)
+
+4. NAVIGHEAZA IN FOLDERUL CU FISIERELE
+
+5. COMPILEAZA SERVERUL:
+   make
+
+6. PORNESTE HOTSPOT-UL PE TELEFON
+   (Asigura-te ca PC-urile se conecteaza la el)
+
+7. AFLA IP-UL TELEFONULUI (de obicei e 192.168.43.1 pe hotspot)
+
+8. ACORDA PERMISIUNI DE EXECUTIE (daca primesti 'Permission Denied'):
+   chmod +x server
+
+9. RULEAZA SERVERUL:
+   ./server
+
+NOTA: Daca 'chmod' nu merge, asigura-te ca fisierele sunt in folderul 'home' al Termux (scrie 'cd ~' si muta-le acolo), NU pe '/sdcard' sau foldere partajate, deoarece Android blocheaza executia de acolo.
+
