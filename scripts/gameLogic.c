@@ -3,6 +3,7 @@
 
 #include "gameLogic.h"
 #include "socketLogic/socketBA.h"
+#include "raylib.h"
 
 int topGridAttacks[10][10] = {0};
 int bottomGridAttacks[10][10] = {0};
@@ -13,6 +14,9 @@ int shipsFound[5]  = {0, 0, 0, 0, 0};
 bool boardHasErrors = false;
 int tempR[100], tempC[100];
 
+double playerHitTime = 0.0; 
+double enemyHitTime = 0.0; 
+
 //networking globals
 int playerNumber = 0;
 int sockfd = -1;
@@ -22,18 +26,25 @@ int gameOverResult = 0;
 char serverIp[64] = DEFAULT_IP;
 
 void FloodFillShip(int i, int j, int* minI, int* maxI, int* minJ, int* maxJ, int* count, bool visited[10][10]) {
-    if (i < 0 || i >= 10 || j < 0 || j >= 10) return;
-    if (PlayerShipMatrix[i][j].type == NULL_SHIP || visited[i][j]) return;
+
+    if (i < 0 || i >= 10 || j < 0 || j >= 10) 
+        return;
+    if (PlayerShipMatrix[i][j].type ==NULL_SHIP|| visited[i][j]) 
+        return;
 
     visited[i][j] = true;
     
     tempR[*count] = i;
     tempC[*count] = j;
     (*count)++;
-    if (i < *minI) *minI = i;
-    if (i > *maxI) *maxI = i;
-    if (j < *minJ) *minJ = j;
-    if (j > *maxJ) *maxJ = j;
+    if (i < *minI) 
+        *minI = i;
+    if (i > *maxI) 
+        *maxI = i;
+    if (j < *minJ) 
+        *minJ = j;
+    if (j > *maxJ) 
+        *maxJ = j;
 
     for (int di = -1; di <= 1; di++) {
         for (int dj = -1; dj <= 1; dj++) {
@@ -47,7 +58,8 @@ void FloodFillShip(int i, int j, int* minI, int* maxI, int* minJ, int* maxJ, int
 void CalculateFleet() {
     bool visited[10][10] = {false};
     boardHasErrors = false; 
-    for(int i=0; i<5; i++) shipsFound[i] = 0;
+    for(int i=0; i<5; i++) 
+        shipsFound[i] = 0;
 
     for (int i = 0; i < 10; i++) {
         for (int j = 0; j < 10; j++) {
@@ -59,7 +71,10 @@ void CalculateFleet() {
                 int width = maxJ - minJ + 1;
                 int height = maxI - minI + 1;
 
-                bool isShipValid = ((width==1||height==1)&&(width*height==count)&&(count <= 4));
+                bool isShipValid = false;
+                if ((width== 1|| height==1) &&(width *height ==count)&& (count <= 4)) {
+                    isShipValid = true;
+                }
                 
                 if (isShipValid) {
                     shipsFound[count]++;
@@ -88,7 +103,11 @@ void sendBoard() {
     char msg[256];
     for (int i = 0; i < 10; i++) {
         for (int j = 0; j < 10; j++) {
-            boardStr[i * 10 + j] = (PlayerShipMatrix[i][j].type != NULL_SHIP) ? '1' : '0';
+            if (PlayerShipMatrix[i][j].type != NULL_SHIP) {
+                boardStr[i * 10 + j] = '1';
+            } else {
+                boardStr[i * 10 + j] = '0';
+            }
         }
     }
     boardStr[100] = '\0';
@@ -122,6 +141,7 @@ void processServerMessage(const char* msg, GameState* state) {
     else if (sscanf(msg, "HIT %d %d", &row, &col) == 2) {
         printf("GAME: Am lovit la [%d][%d]!\n", row, col);
         topGridAttacks[row][col] = 1;
+        enemyHitTime = GetTime();
         isMyTurn = true; //inca o tura la hit
         //marcam diagonalele ca fiind libere
         for (int di = -1; di <= 1; di += 2) {
@@ -143,6 +163,7 @@ void processServerMessage(const char* msg, GameState* state) {
     else if (sscanf(msg, "YOUHIT %d %d", &row, &col) == 2) {
         printf("GAME: Inamicul ne-a lovit la [%d][%d]\n", row, col);
         bottomGridAttacks[row][col] = 1;
+        playerHitTime = GetTime();
     }
     else if (sscanf(msg, "YOUMISS %d %d", &row, &col) == 2) {
         printf("GAME: Inamicul a ratat la [%d][%d]\n", row, col);

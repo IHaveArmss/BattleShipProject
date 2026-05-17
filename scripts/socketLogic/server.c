@@ -248,11 +248,11 @@ int main(void) {
             char resp[64];
             snprintf(resp, sizeof(resp), "HIT %d %d\n", row, col);
             sendToClient(currentPlayer, resp);
-            snprintf(resp, sizeof(resp), "YOUHIT %d %d\n", row, col);
+            snprintf(resp,sizeof(resp), "YOUHIT %d %d\n", row, col);
             sendToClient(opponent, resp);
 
             printf("SERVER: P%d a lovit [%d][%d], P%d mai are %d celule\n",
-                   currentPlayer + 1, row, col, opponent + 1, shipCellsLeft[opponent]);
+                   currentPlayer +1, row,col, opponent+1, shipCellsLeft[opponent]);
 
             //verificam daca jocul s-a terminat
             if (shipCellsLeft[opponent] <= 0) {

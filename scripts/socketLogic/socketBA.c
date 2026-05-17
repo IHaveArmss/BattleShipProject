@@ -13,8 +13,8 @@
 #include "socketBA.h"
 
 int connectToServer(const char* ip, int port) {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
+    int sockfd =socket(AF_INET,SOCK_STREAM, 0);
+    if (sockfd <0) {
         printf("SOCKET: Eroare la creare socket: %s\n", strerror(errno));
         return -1;
     }
@@ -37,8 +37,8 @@ int connectToServer(const char* ip, int port) {
     }
 
     //setam non-blocking dupa connect
-    int flags = fcntl(sockfd, F_GETFL, 0);
-    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+    int flags = fcntl(sockfd,F_GETFL, 0);
+    fcntl(sockfd,F_SETFL,flags| O_NONBLOCK);
 
     printf("SOCKET: Conectat la %s:%d\n", ip, port);
     return sockfd;
@@ -47,10 +47,10 @@ int connectToServer(const char* ip, int port) {
 int sendMsg(int sockfd, const char* msg) {
     int len = strlen(msg);
     int totalSent = 0;
-    while (totalSent < len) {
-        int sent = send(sockfd, msg + totalSent, len - totalSent, 0);
-        if (sent < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+    while (totalSent<len) {
+        int sent =send(sockfd, msg + totalSent, len - totalSent, 0);
+        if (sent <0) {
+            if (errno== EAGAIN || errno == EWOULDBLOCK) {
                 usleep(1000); //asteptam 1ms si incercam din nou
                 continue;
             }
@@ -67,7 +67,7 @@ int recvMsg(int sockfd, char* buf, int bufSize) {
     int received = recv(sockfd, buf, bufSize - 1, 0);
     if (received < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return 0; //nimic de citit, e ok
+            return 0; //nimic de citit e ok
         }
         printf("SOCKET: Eroare la primire: %s\n", strerror(errno));
         return -1;

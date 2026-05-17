@@ -34,7 +34,7 @@ typedef struct Ship {
 } ShipBuild;
 
 //matricile de joc
-extern int topGridAttacks[10][10];     //atacurile noastre pe gridu inamic (0=gol,1=hit,2=miss,3=mark)
+extern int topGridAttacks[10][10];  //atacurile noastre pe gridu inamic (0=gol,1=hit,2=miss,3=mark)
 extern int bottomGridAttacks[10][10];  //atacurile inamicului pe gridu nostru
 extern ShipBuild PlayerShipMatrix[10][10];
 extern Tools toolsState;
@@ -46,14 +46,17 @@ extern int tempC[100];
 
 //networking globals
 extern int playerNumber;     //1 sau 2
-extern int sockfd;           //socket-ul catre server
+extern int sockfd;        //socket-ul catre server
 extern bool isConnected;     
 extern bool isMyTurn;
 extern int gameOverResult;   //0=nimic, 1=castigat, 2=pierdut
 extern char serverIp[64];
 
+extern double playerHitTime; 
+extern double enemyHitTime;  
+
 //functii de logica
-void FloodFillShip(int i, int j, int* minI, int* maxI, int* minJ, int* maxJ, int* count, bool visited[10][10]);
+void FloodFillShip(int i, int j,int* minI, int* maxI,int* minJ,int* maxJ,int* count, bool visited[10][10]);
 void CalculateFleet();
 bool isFleetValid();
 void sendBoard();

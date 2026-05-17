@@ -24,15 +24,17 @@ int main(void) {
     int horizontalMargin = 80;
     int verticalMargin = 80;
 
-    if (targetWidth > monitorWidth - horizontalMargin) {
+    if (targetWidth >monitorWidth -horizontalMargin) {
         targetWidth = monitorWidth - horizontalMargin;
     }
-    if (targetHeight > monitorHeight - verticalMargin) {
-        targetHeight = monitorHeight - verticalMargin;
+    if (targetHeight >monitorHeight- verticalMargin) {
+        targetHeight= monitorHeight -verticalMargin;
     }
 
-    if (targetWidth < 900) targetWidth = 900;
-    if (targetHeight < 700) targetHeight = 700;
+    if (targetWidth <900) 
+        targetWidth= 900;
+    if (targetHeight < 700) 
+        targetHeight =700;
 
     SetWindowSize(targetWidth, targetHeight);
 
@@ -40,9 +42,9 @@ int main(void) {
     
     SetTargetFPS(60);
 
-    GameState currentState = MENU;
-    bool boardSent = false;
-    bool connectAttempted = false;
+    GameState currentState= MENU;
+    bool boardSent =false;
+    bool connectAttempted =false;
     int connectFrameDelay = 0;
 
     char recvBuf[512];
@@ -51,7 +53,7 @@ int main(void) {
 
         //procesam mesajele de la server 
         if (isConnected && sockfd >= 0) {
-            int n = recvMsg(sockfd, recvBuf, sizeof(recvBuf));
+            int n = recvMsg(sockfd,recvBuf, sizeof(recvBuf));
             if (n > 0) {
                 //poate veni mai mult de un mesaj le procesam pe rand
                 char* line = strtok(recvBuf, "\n");
@@ -106,34 +108,32 @@ int main(void) {
                     }
                 }
             }
-            else if (currentState == SETUP) {
+            else if (currentState ==SETUP) {
                 ClearBackground(BACKGROUND_COLOR);
                 drawGrid(currentState);
                 drawSideMenu();
                 drawSideTools();
                 
-                if (drawReadyButton() && !boardSent) {
+                if (drawReadyButton()&& !boardSent) {
                     sendBoard();
-                    boardSent = true;
-                    currentState = WAITING_READY;
+                    boardSent =true;
+                    currentState= WAITING_READY;
                     printf("MAIN: Board trimis, asteptam adversarul\n");
                 }
             }
-            else if (currentState == WAITING_READY) {
+            else if (currentState ==WAITING_READY) {
                 ClearBackground(BACKGROUND_COLOR);
                 drawGrid(currentState);
                 drawWaitingReady();
             }
-            else if (currentState == PLAYER_TURN || currentState == ENEMY_TURN) {
+            else if (currentState== PLAYER_TURN || currentState== ENEMY_TURN) {
                 ClearBackground(BACKGROUND_COLOR);
                 drawGrid(currentState);
                 drawSideTools();
             }
-            else if (currentState == GAME_OVER) {
+            else if (currentState ==GAME_OVER) {
                 drawGameOver();
             }
-        
-
         EndDrawing();
     }
 

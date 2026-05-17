@@ -25,11 +25,159 @@
 
 
 static bool ipFieldActive = false;
+static Texture2D meBadgeTexture = {0};
+static Texture2D otherBadgeTexture = {0};
+static bool playerBadgeTexturesLoaded = false;
+static Texture2D meBadgeRedTexture = {0};
+static Texture2D otherBadgeRedTexture = {0};
+static Sound ouchSound = {0};
+static bool badgeAudioLoaded = false;
+static double lastOuchPlayTime = 0.0;
 
 static int ScaleUi(float value) {
     float scale = (float)GetScreenHeight()/BASE_SCREEN_HEIGHT;
     if (scale < 0.75f) scale = 0.75f;
     return (int)roundf(value*scale);
+}
+
+static void LoadPlayerBadgeTextures(void) {
+    if (playerBadgeTexturesLoaded) {
+        return;
+    }
+
+    meBadgeTexture = LoadTexture("assets/images/me.png");
+    otherBadgeTexture = LoadTexture("assets/images/other.png");
+    // optional red variants
+    meBadgeRedTexture = LoadTexture("assets/images/me_red.png");
+    otherBadgeRedTexture = LoadTexture("assets/images/other_red.png");
+
+    // load ouch sound if available
+    if (!badgeAudioLoaded) {
+        ouchSound = LoadSound("assets/sounds/ouch.mp3");
+        badgeAudioLoaded = true;
+    }
+    playerBadgeTexturesLoaded = true;
+}
+
+static void drawBadgeTile(Rectangle badgeRect, Texture2D badgeTexture) {
+    DrawRectangleRec(badgeRect, DARKGRAY);
+    DrawRectangleLinesEx(badgeRect, 3, GREEN);
+
+    if (badgeTexture.id != 0) {
+        Rectangle sourceRect = { 0.0f, 0.0f, (float)badgeTexture.width, (float)badgeTexture.height };
+        Rectangle destRect = {
+            badgeRect.x + 8.0f,
+            badgeRect.y + 8.0f,
+            badgeRect.width - 16.0f,
+            badgeRect.height - 16.0f
+        };
+        DrawTexturePro(badgeTexture, sourceRect, destRect, (Vector2){0.0f, 0.0f}, 0.0f, WHITE);
+    }
+}
+
+static void drawPlayerBadge(void) {
+    LoadPlayerBadgeTextures();
+
+    int screenW = GetScreenWidth();
+    int screenH = GetScreenHeight();
+
+    int badgeSize = ScaleUi(150.0f);
+    if (badgeSize < 140) {
+        badgeSize = 140;
+    }
+
+    int gap = ScaleUi(20.0f);
+    int rightMargin = ScaleUi(60.0f);
+    int topY = ScaleUi(120.0f);
+    int bottomY = screenH - badgeSize - ScaleUi(120.0f);
+
+    if (bottomY < topY + badgeSize + gap) {
+        bottomY = topY + badgeSize + gap;
+    }
+
+    int badgeX = screenW - badgeSize - rightMargin;
+    if (badgeX < rightMargin) {
+        badgeX = rightMargin;
+    }
+
+    Rectangle enemyRect = { (float)badgeX, (float)topY, (float)badgeSize, (float)badgeSize };
+    Rectangle playerRect = { (float)badgeX, (float)bottomY, (float)badgeSize, (float)badgeSize };
+
+    Texture2D playerTexture = meBadgeTexture;
+    Texture2D enemyTexture = otherBadgeTexture;
+    Texture2D playerTextureRed = meBadgeRedTexture;
+    Texture2D enemyTextureRed = otherBadgeRedTexture;
+
+    if (playerNumber == 2) {
+        playerTexture = otherBadgeTexture;
+        enemyTexture = meBadgeTexture;
+        playerTextureRed = otherBadgeRedTexture;
+        enemyTextureRed = meBadgeRedTexture;
+    }
+
+    float now =(float)GetTime();
+    bool enemyRed =false;
+    if (enemyHitTime> 0.0) {
+        if ((now-(float)enemyHitTime) <= 0.5f) {
+            enemyRed =true;
+        }
+    }
+
+    bool playerRed =false;
+    if (playerHitTime> 0.0) {
+        if ((now -(float)playerHitTime) <= 0.5f) {
+            playerRed= true;
+        }
+    }
+
+    Texture2D enemyToDraw = enemyTexture;
+    if (enemyRed) {
+        if (enemyTextureRed.id != 0) {
+            enemyToDraw =enemyTextureRed;
+        }
+    }
+
+    Texture2D playerToDraw =playerTexture;
+    if (playerRed) {
+        if (playerTextureRed.id!= 0) {
+            playerToDraw =playerTextureRed;
+        }
+    }
+
+    drawBadgeTile(enemyRect,enemyToDraw);
+    drawBadgeTile(playerRect,playerToDraw);
+
+    if (badgeAudioLoaded) {
+        double lastHit = lastOuchPlayTime;
+        double latestHitTime= lastHit;
+        if (playerHitTime >latestHitTime) 
+            latestHitTime = playerHitTime;
+        if (enemyHitTime > latestHitTime) 
+            latestHitTime = enemyHitTime;
+        if (latestHitTime>lastOuchPlayTime) {
+            PlaySound(ouchSound);
+            lastOuchPlayTime=latestHitTime;
+        }
+    }
+
+    const char* enemyLabel = "ENEMY";
+    const char* playerLabel = "YOU";
+
+    int enemyFontSize = ScaleUi(18.0f);
+    int playerFontSize = ScaleUi(18.0f);
+
+    int enemyLabelWidth = MeasureText(enemyLabel, enemyFontSize);
+    int playerLabelWidth = MeasureText(playerLabel, playerFontSize);
+
+    DrawText(enemyLabel, enemyRect.x + (enemyRect.width - enemyLabelWidth) / 2, enemyRect.y - enemyFontSize - 4, enemyFontSize, GREEN);
+    DrawText(playerLabel, playerRect.x + (playerRect.width - playerLabelWidth) / 2, playerRect.y - playerFontSize - 4, playerFontSize, GREEN);
+
+    if (playerTexture.id == 0 || enemyTexture.id == 0) {
+        const char* fallbackText = (playerNumber == 2) ? "PLAYER 2" : "PLAYER 1";
+        int fontSize = ScaleUi(20.0f);
+        int textWidth = MeasureText(fallbackText, fontSize);
+        DrawText(fallbackText, playerRect.x + (playerRect.width - textWidth) / 2, playerRect.y + (playerRect.height - fontSize) / 2, fontSize, WHITE);
+    }
 }
 
 bool drawButton(Rectangle bounds,Color baseColor,Color gridColor){
@@ -270,6 +418,10 @@ void drawGrid(GameState gameState){
             }
         }
     }
+
+    if (gameState == SETUP || gameState == WAITING_READY || gameState == PLAYER_TURN || gameState == ENEMY_TURN) {
+        drawPlayerBadge();
+    }
 }
 
 void drawSideMenu(void) {
@@ -286,52 +438,54 @@ void drawSideMenu(void) {
     int baseX = ScaleUi(12.0f);
     int baseY = screenH - menuHeight - ScaleUi(20.0f);
 
-    if (baseY < ScaleUi(12.0f)) baseY = ScaleUi(12.0f);
-    if (baseX + menuWidth > screenW) {
-        baseX = screenW - menuWidth - ScaleUi(12.0f);
+    if (baseY< ScaleUi(12.0f)) baseY= ScaleUi(12.0f);
+    if (baseX +menuWidth > screenW) {
+        baseX =screenW -menuWidth -ScaleUi(12.0f);
         if (baseX < 0) baseX = 0;
     }
 
-    DrawRectangle(baseX, baseY, menuWidth, menuHeight, LIGHTGRAY);
-    DrawText("FLEET SETUP", baseX + ScaleUi(10.0f), baseY + ScaleUi(10.0f), titleSize, BLACK);
+    DrawRectangle(baseX,baseY, menuWidth, menuHeight, LIGHTGRAY);
+    DrawText("FLEET SETUP", baseX +ScaleUi(10.0f),baseY + ScaleUi(10.0f),titleSize,BLACK);
 
     
 
-    int currentY = baseY + ScaleUi(50.0f);
+    int currentY = baseY +ScaleUi(50.0f);
 
-    for (int size = 4; size >= 1; size--) {
-        int leftToPlace = shipsNeeded[size] - shipsFound[size];
+    for (int size =4; size >= 1;size--) {
+        int leftToPlace = shipsNeeded[size] -shipsFound[size];
         
-        const char* text = TextFormat("1x%d Ships: %d", size, leftToPlace);
+        const char* text =TextFormat("1x%d Ships: %d",size,leftToPlace);
         
         Color textColor = BLACK;
-        if (leftToPlace < 0) textColor = RED;   
-        if (leftToPlace == 0) textColor = GREEN; 
+        if (leftToPlace < 0) 
+            textColor = RED;   
+        if (leftToPlace == 0) 
+            textColor = GREEN; 
         
-        DrawText(text, baseX + ScaleUi(10.0f), currentY, bodySize, textColor);
-        currentY += bodyStep;
+        DrawText(text, baseX + ScaleUi(10.0f),currentY, bodySize,textColor);
+        currentY = currentY + bodyStep;
     }
 
     if (boardHasErrors) {
-        DrawText("ERROR: Ships touching", baseX + ScaleUi(5.0f), currentY + ScaleUi(20.0f), errorSize, RED);
-        DrawText("or invalid shapes!", baseX + ScaleUi(5.0f), currentY + ScaleUi(40.0f), errorSize, RED);
+        DrawText("ERROR: Ships touching", baseX + ScaleUi(5.0f),currentY +ScaleUi(20.0f), errorSize, RED);
+        DrawText("or invalid shapes!", baseX +ScaleUi(5.0f), currentY + ScaleUi(40.0f), errorSize, RED);
     }
 }
 
 void drawSideTools(void) {
-    Rectangle bounds = {50, 100, 100, 150};
+    Rectangle bounds = {50, 100,100,150};
     DrawRectangleRec(bounds, LIGHTGRAY);
 
-    float segmentHeight = bounds.height / 3.0f;
-    float fontSize = ScaleUi(15.0f);
+    float segmentHeight = bounds.height /3.0f;
+    float fontSize =ScaleUi(15.0f);
     Font font = GetFontDefault();
     int clicked;
 
     // FIRE
-    Rectangle bounds1 = { bounds.x, bounds.y, bounds.width, segmentHeight };
+    Rectangle bounds1 = { bounds.x, bounds.y, bounds.width, segmentHeight};
     clicked = drawButton(bounds1, BLACK, LIGHTGRAY);
     Vector2 size1 = MeasureTextEx(font, "FIRE", fontSize, 1);
-    DrawTextEx(font, "FIRE", (Vector2){ bounds1.x + (bounds1.width - size1.x) / 2, bounds1.y + (bounds1.height - size1.y) / 2 }, fontSize, 1, WHITE);
+    DrawTextEx(font, "FIRE", (Vector2){ bounds1.x + (bounds1.width - size1.x) /2,bounds1.y + (bounds1.height - size1.y) / 2 }, fontSize, 1, WHITE);
     if(clicked){
         toolsState = toolFire;
         printf("Tool selected: FIRE\n");
@@ -370,8 +524,19 @@ bool drawReadyButton(void) {
         (float)ScaleUi(60.0f)
     };
 
-    Color btnColor = fleetOk ? DARKGREEN : DARKGRAY;
-    Color borderColor = fleetOk ? GREEN : GRAY;
+    Color btnColor;
+    if (fleetOk) {
+        btnColor = DARKGREEN;
+    } else {
+        btnColor = DARKGRAY;
+    }
+
+    Color borderColor;
+    if (fleetOk) {
+        borderColor = GREEN;
+    } else {
+        borderColor = GRAY;
+    }
 
     bool clicked = false;
     if (fleetOk) {
@@ -380,12 +545,17 @@ bool drawReadyButton(void) {
         drawButton(btnRect, btnColor, borderColor);
     }
 
-    const char* text = fleetOk ? "READY" : "PLACE SHIPS";
+    const char* text;
+    if (fleetOk) {
+        text = "READY";
+    } else {
+        text = "PLACE SHIPS";
+    }
     int fontSize = ScaleUi(25.0f);
     int textWidth = MeasureText(text, fontSize);
-    int textX = btnRect.x + (btnRect.width - textWidth) / 2;
-    int textY = btnRect.y + (btnRect.height - fontSize) / 2;
-    DrawText(text, textX, textY, fontSize, WHITE);
+    int textX = btnRect.x +(btnRect.width -textWidth) /2;
+    int textY = btnRect.y +(btnRect.height - fontSize)/2;
+    DrawText(text,textX, textY,fontSize, WHITE);
 
     return clicked;
 }
@@ -398,16 +568,16 @@ int drawPlayerSelect() {
 
     //titlu
     int titleSize = ScaleUi(60.0f);
-    const char* title = "SELECT PLAYER";
-    int titleX = (screenW - MeasureText(title, titleSize))/2;
-    DrawText(title, titleX, ScaleUi(80.0f), titleSize, WHITE);
+    const char* title ="SELECT PLAYER";
+    int titleX = (screenW -MeasureText(title, titleSize))/2;
+    DrawText(title, titleX,ScaleUi(80.0f),titleSize, WHITE);
 
     //IP input field
     int ipLabelSize = ScaleUi(20.0f);
-    DrawText("Server IP:", screenW/2 - ScaleUi(150.0f), ScaleUi(200.0f), ipLabelSize, LIGHTGRAY);
+    DrawText("Server IP:",screenW/2 -ScaleUi(150.0f),ScaleUi(200.0f), ipLabelSize,LIGHTGRAY);
 
     Rectangle ipBox = {
-        (float)(screenW/2 - ScaleUi(150.0f)),
+        (float)(screenW/2 -ScaleUi(150.0f)),
         (float)ScaleUi(230.0f),
         (float)ScaleUi(300.0f),
         (float)ScaleUi(40.0f)
@@ -419,72 +589,79 @@ int drawPlayerSelect() {
         ipFieldActive = CheckCollisionPointRec(mp, ipBox);
     }
 
-    Color ipBorderCol = ipFieldActive ? GREEN : GRAY;
-    DrawRectangleRec(ipBox, DARKGRAY);
-    DrawRectangleLinesEx(ipBox, 2, ipBorderCol);
+    Color ipBorderCol;
+    if (ipFieldActive){
+        ipBorderCol= GREEN;
+    } else {
+        ipBorderCol= GRAY;
+    }
+    DrawRectangleRec(ipBox,DARKGRAY);
+    DrawRectangleLinesEx(ipBox, 2,ipBorderCol);
 
     //input handling
     if (ipFieldActive) {
         int key = GetCharPressed();
-        while (key > 0) {
-            if ((key >= '0' && key <= '9') || key == '.') {
+        while (key >0) {
+            if ((key >='0'&& key <='9') ||key == '.') {
                 int len = strlen(serverIp);
-                if (len < 63) {
-                    serverIp[len] = (char)key;
-                    serverIp[len + 1] = '\0';
+                if (len <63) {
+                    serverIp[len]=(char)key;
+                    serverIp[len+1] ='\0';
                 }
             }
             key = GetCharPressed();
         }
         if (IsKeyPressed(KEY_BACKSPACE)) {
-            int len = strlen(serverIp);
-            if (len > 0) serverIp[len - 1] = '\0';
+            int len =strlen(serverIp);
+            if (len> 0) serverIp[len-1]= '\0';
         }
     }
 
-    int ipFontSize = ScaleUi(20.0f);
-    DrawText(serverIp, ipBox.x + ScaleUi(10.0f), ipBox.y + (ipBox.height - ipFontSize)/2, ipFontSize, WHITE);
+    int ipFontSize =ScaleUi(20.0f);
+    DrawText(serverIp,ipBox.x+ ScaleUi(10.0f), ipBox.y+ (ipBox.height -ipFontSize)/2,ipFontSize, WHITE);
 
     //blinking cursor
-    if (ipFieldActive && ((int)(GetTime()*2) % 2 == 0)) {
-        int cursorX = ipBox.x + ScaleUi(10.0f) + MeasureText(serverIp, ipFontSize);
-        DrawText("|", cursorX, ipBox.y + (ipBox.height - ipFontSize)/2, ipFontSize, GREEN);
+    if (ipFieldActive&& ((int)(GetTime()*2) %2== 0)) {
+        int cursorX= ipBox.x +ScaleUi(10.0f) +MeasureText(serverIp, ipFontSize);
+        DrawText("|",cursorX, ipBox.y+ (ipBox.height -ipFontSize)/2,ipFontSize, GREEN);
     }
 
     //butoane player 1 si player 2
     int btnW = ScaleUi(250.0f);
     int btnH = ScaleUi(120.0f);
     int gap = ScaleUi(60.0f);
-    int totalW = 2*btnW + gap;
-    int startX = (screenW - totalW)/2;
-    int btnY = screenH/2 - btnH/2 + ScaleUi(40.0f);
+    int totalW = 2*btnW+gap;
+    int startX = (screenW-totalW)/2;
+    int btnY = screenH/2-btnH/2+ScaleUi(40.0f);
 
-    Rectangle btn1 = { (float)startX, (float)btnY, (float)btnW, (float)btnH };
-    Rectangle btn2 = { (float)(startX + btnW + gap), (float)btnY, (float)btnW, (float)btnH };
+    Rectangle btn1 = { (float)startX,(float)btnY, (float)btnW, (float)btnH };
+    Rectangle btn2 = { (float)(startX+ btnW + gap), (float)btnY, (float)btnW, (float)btnH };
 
-    bool clicked1 = drawButton(btn1, BLACK, GREEN);
-    bool clicked2 = drawButton(btn2, BLACK, GREEN);
+    bool clicked1 = drawButton(btn1,BLACK, GREEN);
+    bool clicked2 = drawButton(btn2,BLACK, GREEN);
 
     int fontSize = ScaleUi(35.0f);
 
     const char* p1Text = "PLAYER 1";
-    int p1X = btn1.x + (btn1.width - MeasureText(p1Text, fontSize))/2;
-    int p1Y = btn1.y + (btn1.height - fontSize)/2;
+    int p1X = btn1.x +(btn1.width -MeasureText(p1Text, fontSize))/2;
+    int p1Y = btn1.y+(btn1.height-fontSize)/2;
     DrawText(p1Text, p1X, p1Y, fontSize, GREEN);
 
     const char* p2Text = "PLAYER 2";
-    int p2X = btn2.x + (btn2.width - MeasureText(p2Text, fontSize))/2;
-    int p2Y = btn2.y + (btn2.height - fontSize)/2;
-    DrawText(p2Text, p2X, p2Y, fontSize, GREEN);
+    int p2X = btn2.x +(btn2.width - MeasureText(p2Text, fontSize))/2;
+    int p2Y = btn2.y +(btn2.height - fontSize)/2;
+    DrawText(p2Text,p2X,p2Y, fontSize, GREEN);
 
     //sub text
     int subSize = ScaleUi(14.0f);
     const char* subText = "Player 1 attacks first";
-    int subX = (screenW - MeasureText(subText, subSize))/2;
-    DrawText(subText, subX, btnY + btnH + ScaleUi(20.0f), subSize, GRAY);
+    int subX = (screenW-MeasureText(subText, subSize))/2;
+    DrawText(subText, subX,btnY + btnH + ScaleUi(20.0f), subSize, GRAY);
 
-    if (clicked1) return 1;
-    if (clicked2) return 2;
+    if (clicked1) 
+        return 1;
+    if (clicked2) 
+        return 2;
     return 0;
 }
 
@@ -509,8 +686,8 @@ void drawConnecting() {
 
     int subSize = ScaleUi(18.0f);
     const char* subText = TextFormat("IP: %s  Port: %d", serverIp, SERVER_PORT);
-    int subX = (screenW - MeasureText(subText, subSize))/2;
-    DrawText(subText, subX, textY + fontSize + ScaleUi(20.0f), subSize, GRAY);
+    int subX = (screenW-MeasureText(subText,subSize))/2;
+    DrawText(subText, subX,textY +fontSize +ScaleUi(20.0f), subSize, GRAY);
 }
 
 void drawWaitingReady() {
@@ -518,12 +695,12 @@ void drawWaitingReady() {
 
     int fontSize = ScaleUi(30.0f);
     const char* text = "WAITING FOR OPPONENT...";
-    int textX = (screenW - MeasureText(text, fontSize))/2;
+    int textX = (screenW -MeasureText(text, fontSize))/2;
     int textY = ScaleUi(10.0f);
 
     //animatie pulsata
-    float alpha = (sinf(GetTime() * 3.0f) + 1.0f) / 2.0f;
-    Color col = Fade(GREEN, 0.4f + alpha * 0.6f);
+    float alpha = (sinf(GetTime() *3.0f) +1.0f)/ 2.0f;
+    Color col = Fade(GREEN,0.4f +alpha *0.6f);
     DrawText(text, textX, textY, fontSize, col);
 }
 
@@ -546,9 +723,9 @@ void drawGameOver() {
         titleCol = RED;
     }
 
-    int titleX = (screenW - MeasureText(title, titleSize))/2;
-    int titleY = screenH/2 - titleSize;
-    DrawText(title, titleX, titleY, titleSize, titleCol);
+    int titleX = (screenW -MeasureText(title, titleSize))/2;
+    int titleY = screenH/2 -titleSize;
+    DrawText(title,titleX, titleY, titleSize, titleCol);
 
     //sub mesaj
     int subSize = ScaleUi(25.0f);
@@ -558,14 +735,14 @@ void drawGameOver() {
     } else {
         subText = "DEFEAT!";
     }
-    int subX = (screenW - MeasureText(subText, subSize))/2;
-    DrawText(subText, subX, titleY + titleSize + ScaleUi(20.0f), subSize, titleCol);
+    int subX = (screenW -MeasureText(subText, subSize))/2;
+    DrawText(subText, subX,titleY + titleSize +ScaleUi(20.0f),subSize, titleCol);
 
     //quit hint
     int hintSize = ScaleUi(16.0f);
     const char* hint = "Close window to exit";
-    int hintX = (screenW - MeasureText(hint, hintSize))/2;
-    DrawText(hint, hintX, screenH - ScaleUi(60.0f), hintSize, GRAY);
+    int hintX = (screenW -MeasureText(hint, hintSize))/2;
+    DrawText(hint, hintX,screenH - ScaleUi(60.0f),hintSize, GRAY);
 }
 
 
@@ -577,22 +754,22 @@ bool drawMainMenu(void){
 
     ClearBackground(BACKGROUND_COLOR_MENU);
 
-    int titleX = (screenW - MeasureText("BATTLESHIP", titleFontSize))/2;
+    int titleX = (screenW -MeasureText("BATTLESHIP", titleFontSize))/2;
     DrawText("BATTLESHIP", titleX, titleY, titleFontSize, WHITE);
     
-    drawRadar(screenW / 2, screenH / 2, (float)ScaleUi(200.0f));
+    drawRadar(screenW / 2,screenH /2,(float)ScaleUi(200.0f));
 
     Rectangle btnRect = {
-        (float)(screenW/2 - ScaleUi(150.0f)),
-        (float)(screenH - ScaleUi(180.0f)),
+        (float)(screenW/2 -ScaleUi(150.0f)),
+        (float)(screenH -ScaleUi(180.0f)),
         (float)ScaleUi(300.0f),
         (float)ScaleUi(100.0f)
     };
 
-    if (btnRect.y + btnRect.height > screenH - ScaleUi(20.0f)) {
-        btnRect.y = (float)(screenH - ScaleUi(20.0f) - btnRect.height);
+    if (btnRect.y + btnRect.height > screenH -ScaleUi(20.0f)) {
+        btnRect.y = (float)(screenH -ScaleUi(20.0f) -btnRect.height);
     }
-    bool isStartClicked = drawButton(btnRect, BLACK, GREEN);
+    bool isStartClicked = drawButton(btnRect, BLACK,GREEN);
 
     const char* text = "START";
     int fontSize = ScaleUi(50.0f);

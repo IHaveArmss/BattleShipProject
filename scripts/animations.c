@@ -14,7 +14,10 @@ typedef struct {
     bool active;
 } RadarBlip;
 
-typedef enum { RADAR_ROTATING, RADAR_PAUSED } RadarState;
+typedef enum { 
+    RADAR_ROTATING, 
+    RADAR_PAUSED 
+} RadarState;
 
 //da play la animatie cu sunet de la sonarpath de mai sus
 
